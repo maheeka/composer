@@ -33,7 +33,8 @@ define(['lodash', './ballerina-ast-root', './service-definition', './function-de
         './expressions/binary-expression', './expressions/unary-expression','./connector-action', './struct-definition', './constant-definition',
         './statements/variable-definition-statement', './statements/worker-invocation-statement', './expressions/reference-type-init-expression',
         './expressions/array-init-expression', './statements/worker-reply-statement','./struct-type','./expressions/struct-field-access-expression',
-        './statements/block-statement','./expressions/type-cast-expression','./variable-definition', './statements/break-statement', './statements/throw-statement', './statements/comment-statement'],
+        './statements/block-statement','./expressions/type-cast-expression','./variable-definition', './statements/break-statement', './statements/throw-statement', './statements/comment-statement',
+        './annotations/annotation', './annotations/annotationKeyValue', './annotations/annotationValueArray'],
     function (_, ballerinaAstRoot, serviceDefinition, functionDefinition, connectorDefinition, resourceDefinition,
               workerDeclaration, statement, conditionalStatement, connectorDeclaration, expression, ifElseStatement,
               ifStatement, elseStatement, elseIfStatement, tryCatchStatement, tryStatement, catchStatement, replyStatement,
@@ -46,7 +47,7 @@ define(['lodash', './ballerina-ast-root', './service-definition', './function-de
               unaryExpression, connectorAction, structDefinition, constantDefinition, variableDefinitionStatement,
               workerInvocationStatement, referenceTypeInitExpression, arrayInitExpression, workerReplyStatement,
               structType, structFieldAccessExpression,blockStatement,typeCastExpression,variableDefinition,
-              breakStatement, throwStatement, commentStatement) {
+              breakStatement, throwStatement, commentStatement, annotation, annotationKeyValue, annotationValueArray) {
 
 
 
@@ -569,6 +570,33 @@ define(['lodash', './ballerina-ast-root', './service-definition', './function-de
          */
         BallerinaASTFactory.createCommentStatement = function (args) {
           return new commentStatement(args);
+        };
+
+        /**
+         * creates {@link Annotation}
+         * @param  {Object} args arguments for creating a new annotation.
+         * @return {Annotation}      new annotation object.
+         */
+        BallerinaASTFactory.createAnnotation = function(args) {
+            return new annotation.default(args);
+        };
+
+        /**
+         * creates {@link AnnotationKeyValue}
+         * @param  {Object} args arguments for creating a new annotation key value.
+         * @return {AnnotationKeyValue}      new annotation key value object.
+         */
+        BallerinaASTFactory.createAnnotationKeyValue = function(args) {
+            return new annotationKeyValue.default(args);
+        };
+
+        /**
+         * creates {@link AnnotationValueArray}
+         * @param  {Object} args arguments for creating a new annotation value array.
+         * @return {AnnotationValueArray}      new annotation value array object.
+         */
+        BallerinaASTFactory.createAnnotationValueArray = function(args) {
+            return new annotationValueArray.default(args);
         };
 
         /**
@@ -1103,6 +1131,33 @@ define(['lodash', './ballerina-ast-root', './service-definition', './function-de
          */
         BallerinaASTFactory.isCommentStatement = function (child) {
           return child instanceof commentStatement;
+        };
+
+        /**
+         * instanceof check for annotation ast node.
+         * @param  {ASTNode}  child The ast node
+         * @return {Boolean}       true if same type, else false
+         */
+        BallerinaASTFactory.isAnnotation = function (child) {
+            return child instanceof annotation.default;
+        };
+
+        /**
+         * instanceof check for annotationKeyValue ast node.
+         * @param  {ASTNode}  child The ast node
+         * @return {Boolean}       true if same type, else false
+         */
+        BallerinaASTFactory.isAnnotationKeyValue = function (child) {
+            return child instanceof annotationKeyValue.default;
+        };
+
+        /**
+         * instanceof check for annotationValueArray ast node.
+         * @param  {ASTNode}  child The ast node
+         * @return {Boolean}       true if same type, else false
+         */
+        BallerinaASTFactory.isAnnotationValueArray = function (child) {
+            return child instanceof annotationValueArray.default;
         };
 
         BallerinaASTFactory.createFromJson = function (jsonNode) {

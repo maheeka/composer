@@ -15,8 +15,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-define(['log', 'lodash', 'jquery', 'event_channel', 'js-yaml', './../ast/ballerina-ast-deserializer'],
-   function(log, _, $, EventChannel, YAML, BallerinaASTDeserializer) {
+define(['log', 'lodash', 'jquery', 'event_channel', 'js-yaml', './../ast/ballerina-ast-deserializer', '../../swagger-parser/swagger-parser'],
+   function(log, _, $, EventChannel, YAML, BallerinaASTDeserializer, SwaggerParser) {
 
        /**
         * @class SwaggerView
@@ -30,15 +30,17 @@ define(['log', 'lodash', 'jquery', 'event_channel', 'js-yaml', './../ast/balleri
        var SwaggerView = function (args) {
            this._options = args;
            if(!_.has(args, 'container')){
-               log.error('container is not specified for rendering swagger view.')
+               log.error('container is not specified for rendering swagger view.');
            }
            if(!_.has(args, 'backend')){
-               log.error('backend is not specified for rendering swagger view.')
+               log.error('backend is not specified for rendering swagger view.');
            }
            this._container = _.get(args, 'container');
            this._content = _.get(args, 'content');
            this._backend = _.get(args, 'backend');
            this.deserializer = BallerinaASTDeserializer;
+
+           SwaggerParser = SwaggerParser.default;
        };
 
        var initSwaggerEditor = function(self, content){
@@ -70,7 +72,7 @@ define(['log', 'lodash', 'jquery', 'event_channel', 'js-yaml', './../ast/balleri
         * @param {String} content - content for the editor.
         *
         */
-       SwaggerView.prototype.setContent = function(content){
+       SwaggerView.prototype.setContent = function(content) {
            this._generatedSource = content;
            var generatedSwagger = "{swagger: '2.0', info: {version: '1.0.0', title: 'Swagger Resource'}, paths: {}}";
            if (content) {
@@ -107,24 +109,29 @@ define(['log', 'lodash', 'jquery', 'event_channel', 'js-yaml', './../ast/balleri
        };
 
        SwaggerView.prototype.getContent = function () {
-           var content = this._swaggerEditorWindow.getSwaggerEditorValue();
-           if (content && content != "null" && this._generatedSource) {
-               var response = this._backend.call("convert-swagger", "POST", {
-                   "name": "CalculatorService",
-                   "description": "null",
-                   "swaggerDefinition": content,
-                   "ballerinaDefinition": this._generatedSource
-               }, [{name: "expectedType", value: "ballerina"}]);
+           let swaggerYamlContent = this._swaggerEditorWindow.getSwaggerEditorValue();
+           if (swaggerYamlContent && swaggerYamlContent != "null" && this._generatedSource) {
+               let serviceDefinition = this._generatedNodeTree.getServiceDefinitions()[0];
+               let swaggerParser = new SwaggerParser(this._swaggerEditorWindow.getSwaggerEditorValue(), true);
+               swaggerParser.mergeToService(serviceDefinition);
 
-               if (!response.error && !response.errorMessage) {
-                   try {
-                       this._generatedNodeTree = this.deserializer.getASTModel(JSON.parse(response.ballerinaDefinition));
-                   } catch (err) {
-                       log.error("Invalid response received for swagger-to-ballerina conversion : '"
-                                 + response.ballerinaDefinition + "'");
-                   }
-               }
+        //        var response = this._backend.call("convert-swagger", "POST", {
+        //            "name": "CalculatorService",
+        //            "description": "null",
+        //            "swaggerDefinition": content,
+        //            "ballerinaDefinition": this._generatedSource
+        //        }, [{name: "expectedType", value: "ballerina"}]);
+           //
+        //        if (!response.error && !response.errorMessage) {
+        //            try {
+        //                this._generatedNodeTree = this.deserializer.getASTModel(JSON.parse(response.ballerinaDefinition));
+        //            } catch (err) {
+        //                log.error("Invalid response received for swagger-to-ballerina conversion : '"
+        //                          + response.ballerinaDefinition + "'");
+        //            }
+        //        }
            }
+            log.info(this._generatedNodeTree);
            return this._generatedNodeTree;
        };
 
@@ -137,7 +144,7 @@ define(['log', 'lodash', 'jquery', 'event_channel', 'js-yaml', './../ast/balleri
        };
 
        SwaggerView.prototype.isVisible = function(){
-           return  $(this._container).is(':visible')
+           return  $(this._container).is(':visible');
        };
 
        return SwaggerView;
