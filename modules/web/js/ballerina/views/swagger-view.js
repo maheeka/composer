@@ -109,29 +109,24 @@ define(['log', 'lodash', 'jquery', 'event_channel', 'js-yaml', './../ast/balleri
        };
 
        SwaggerView.prototype.getContent = function () {
-           let swaggerYamlContent = this._swaggerEditorWindow.getSwaggerEditorValue();
-           if (swaggerYamlContent && swaggerYamlContent != "null" && this._generatedSource) {
-               let serviceDefinition = this._generatedNodeTree.getServiceDefinitions()[0];
-               let swaggerParser = new SwaggerParser(this._swaggerEditorWindow.getSwaggerEditorValue(), true);
-               swaggerParser.mergeToService(serviceDefinition);
+           var content = this._swaggerEditorWindow.getSwaggerEditorValue();
+           if (content && content != "null" && this._generatedSource) {
+               var response = this._backend.call("convert-swagger", "POST", {
+                   "name": "CalculatorService",
+                   "description": "null",
+                   "swaggerDefinition": content,
+                   "ballerinaDefinition": this._generatedSource
+               }, [{name: "expectedType", value: "ballerina"}]);
 
-        //        var response = this._backend.call("convert-swagger", "POST", {
-        //            "name": "CalculatorService",
-        //            "description": "null",
-        //            "swaggerDefinition": content,
-        //            "ballerinaDefinition": this._generatedSource
-        //        }, [{name: "expectedType", value: "ballerina"}]);
-           //
-        //        if (!response.error && !response.errorMessage) {
-        //            try {
-        //                this._generatedNodeTree = this.deserializer.getASTModel(JSON.parse(response.ballerinaDefinition));
-        //            } catch (err) {
-        //                log.error("Invalid response received for swagger-to-ballerina conversion : '"
-        //                          + response.ballerinaDefinition + "'");
-        //            }
-        //        }
+               if (!response.error && !response.errorMessage) {
+                   try {
+                       this._generatedNodeTree = this.deserializer.getASTModel(JSON.parse(response.ballerinaDefinition));
+                   } catch (err) {
+                       log.error("Invalid response received for swagger-to-ballerina conversion : '"
+                                 + response.ballerinaDefinition + "'");
+                   }
+               }
            }
-            log.info(this._generatedNodeTree);
            return this._generatedNodeTree;
        };
 
