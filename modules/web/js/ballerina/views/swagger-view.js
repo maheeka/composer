@@ -15,8 +15,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-define(['log', 'lodash', 'jquery', 'event_channel', 'js-yaml', './../ast/ballerina-ast-deserializer'],
-   function(log, _, $, EventChannel, YAML, BallerinaASTDeserializer) {
+define(['log', 'lodash', 'jquery', 'event_channel', 'js-yaml', './../ast/ballerina-ast-deserializer', '../../swagger-parser/swagger-parser'],
+   function(log, _, $, EventChannel, YAML, BallerinaASTDeserializer, SwaggerParser) {
 
        /**
         * @class SwaggerView
@@ -30,15 +30,17 @@ define(['log', 'lodash', 'jquery', 'event_channel', 'js-yaml', './../ast/balleri
        var SwaggerView = function (args) {
            this._options = args;
            if(!_.has(args, 'container')){
-               log.error('container is not specified for rendering swagger view.')
+               log.error('container is not specified for rendering swagger view.');
            }
            if(!_.has(args, 'backend')){
-               log.error('backend is not specified for rendering swagger view.')
+               log.error('backend is not specified for rendering swagger view.');
            }
            this._container = _.get(args, 'container');
            this._content = _.get(args, 'content');
            this._backend = _.get(args, 'backend');
            this.deserializer = BallerinaASTDeserializer;
+
+           SwaggerParser = SwaggerParser.default;
        };
 
        var initSwaggerEditor = function(self, content){
@@ -70,7 +72,7 @@ define(['log', 'lodash', 'jquery', 'event_channel', 'js-yaml', './../ast/balleri
         * @param {String} content - content for the editor.
         *
         */
-       SwaggerView.prototype.setContent = function(content){
+       SwaggerView.prototype.setContent = function(content) {
            this._generatedSource = content;
            var generatedSwagger = "{swagger: '2.0', info: {version: '1.0.0', title: 'Swagger Resource'}, paths: {}}";
            if (content) {
@@ -137,7 +139,7 @@ define(['log', 'lodash', 'jquery', 'event_channel', 'js-yaml', './../ast/balleri
        };
 
        SwaggerView.prototype.isVisible = function(){
-           return  $(this._container).is(':visible')
+           return  $(this._container).is(':visible');
        };
 
        return SwaggerView;

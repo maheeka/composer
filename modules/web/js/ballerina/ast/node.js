@@ -394,6 +394,17 @@ define(['log', 'require', 'event_channel', 'lodash'], function(log, require, Eve
      */
     ASTNode.prototype.generateUniqueIdentifiers = function() {};
 
+    /**
+     * Gets the children of a specific type.
+     * @param  {function} typeCheckFunction The function thats used for type checking. Example: BallerinaASTFactory.isConnectorDeclaration
+     * @return {ASTNode[]}                   An array of children.
+     */
+    ASTNode.prototype.getChildrenOfType = function(typeCheckFunction) {
+        return _.filter(this.getChildren(), function(child) {
+            return typeCheckFunction.call(child.getFactory(), child);
+        });
+    };
+
     return ASTNode;
 
 });
