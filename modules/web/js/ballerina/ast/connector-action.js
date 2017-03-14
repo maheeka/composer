@@ -20,13 +20,13 @@ define(['lodash', './node', 'log', '../utils/common-utils'], function(_, ASTNode
     /**
      * Constructor for ConnectorAction
      * @param {object} args - Constructor arguments
+     * contains {Annotation|ArgumentParameterDefinitionHolder|ReturnParameterDefinitionHolder|Statement|Worker} as children
      * @constructor
      */
     var ConnectorAction = function(args) {
-        ASTNode.call(this, "ConnectorAction");
+        ASTNode.call(this, 'ConnectorAction');
         this.action_name = _.get(args, 'action_name');
         this.annotations = _.get(args, 'annotations', []);
-        this.arguments = _.get(args, 'arguments', []);
     };
 
     ConnectorAction.prototype = Object.create(ASTNode.prototype);
@@ -53,15 +53,16 @@ define(['lodash', './node', 'log', '../utils/common-utils'], function(_, ASTNode
      * @return {Object[]} arguments - Action Arguments
      */
     ConnectorAction.prototype.getArguments = function () {
-        var actionArgs = [];
-        var self = this;
+        return this.getArgumentParameterDefinitionHolder().getChildren();
+    };
 
-        _.forEach(this.getChildren(), function (child) {
-            if (self.getFactory().isArgument(child) && !self.getFactory().isReturnType(child)) {
-                actionArgs.push(child);
-            }
-        });
-        return actionArgs;
+    ConnectorAction.prototype.getArgumentParameterDefinitionHolder = function () {
+        var argParamDefHolder = this.findChild(this.getFactory().isArgumentParameterDefinitionHolder);
+        if (_.isUndefined(argParamDefHolder)) {
+            argParamDefHolder = this.getFactory().createArgumentParameterDefinitionHolder();
+            this.addChild(argParamDefHolder);
+        }
+        return argParamDefHolder;
     };
 
     /**
@@ -143,7 +144,7 @@ define(['lodash', './node', 'log', '../utils/common-utils'], function(_, ASTNode
     ConnectorAction.prototype.getReturnTypesAsString = function () {
         var returnTypes = [];
         _.forEach(this.getReturnTypes(), function (returnTypeChild) {
-            returnTypes.push(returnTypeChild.getArgumentAsString())
+            returnTypes.push(returnTypeChild.getParameterDefinitionAsString())
         });
 
         return _.join(returnTypes, " , ");
@@ -151,11 +152,19 @@ define(['lodash', './node', 'log', '../utils/common-utils'], function(_, ASTNode
 
     /**
      * Gets the defined return types.
-     * @return {Argument[]} - Array of args.
+     * @return {ParameterDefinition[]} - Array of return arguments.
      */
     ConnectorAction.prototype.getReturnTypes = function () {
-        var returnTypeModel = this.getReturnTypeModel();
-        return !_.isUndefined(returnTypeModel) ? this.getReturnTypeModel().getChildren().slice(0) : [];
+        return this.getReturnParameterDefinitionHolder().getChildren();
+    };
+
+    ConnectorAction.prototype.getReturnParameterDefinitionHolder = function () {
+        var returnParamDefHolder = this.findChild(this.getFactory().isReturnParameterDefinitionHolder);
+        if (_.isUndefined(returnParamDefHolder)) {
+            returnParamDefHolder = this.getFactory().createReturnParameterDefinitionHolder();
+            this.addChild(returnParamDefHolder);
+        }
+        return returnParamDefHolder;
     };
 
     /**
@@ -166,20 +175,16 @@ define(['lodash', './node', 'log', '../utils/common-utils'], function(_, ASTNode
     ConnectorAction.prototype.addReturnType = function (type, identifier) {
         var self = this;
 
-        // Adding return type mode if it doesn't exists.
-        if (_.isUndefined(this.getReturnTypeModel())) {
-            this.addChild(this.getFactory().createReturnType());
-        }
+        var returnParamDefHolder = this.getReturnParameterDefinitionHolder();
 
         // Check if there is already a return type with the same identifier.
         if (!_.isUndefined(identifier)) {
-            _.forEach(this.getReturnTypeModel().getChildren(), function(child) {
-                if (child.getIdentifier() === identifier) {
-                    var errorString = "An argument with identifier '" + identifier + "' already exists.";
-                    log.error(errorString);
-                    throw errorString;
-                }
-            });
+            var child = returnParamDefHolder.findChildByIdentifier(true, identifier);
+            if (_.isUndefined(child)) {
+                var errorString = "An return argument with identifier '" + identifier + "' already exists.";
+                log.error(errorString);
+                throw errorString;
+            }
         }
 
         // Validating whether return type can be added based on identifiers of other return types.
@@ -199,27 +204,18 @@ define(['lodash', './node', 'log', '../utils/common-utils'], function(_, ASTNode
             }
         }
 
-        var argument = this.getFactory().createArgument({type: type, identifier: identifier});
-
-        var existingReturnType = self.getReturnTypeModel();
-
-        // Adding the new argument input position.
-        if (!_.isNil(existingReturnType)) {
-            existingReturnType.addChild(argument, existingReturnType.getChildren().length + 1);
-        } else {
-            var returnType = this.getFactory().createReturnType();
-            returnType.addChild(argument, 0);
-            this.addChild(returnType);
-        }
+        var paramDef = this.getFactory().createParameterDefinition({typeName: type, name: identifier});
+        returnParamDefHolder.addChild(paramDef, 0);
     };
 
     ConnectorAction.prototype.hasNamedReturnTypes = function () {
-        if (_.isUndefined(this.getReturnTypeModel())) {
+        if (this.getReturnParameterDefinitionHolder().getChildren().length == 0) {
+            //if there are no return types in the return type model
             return false;
         } else {
             //check if any of the return types have identifiers
-            var indexWithoutIdentifiers = _.findIndex(this.getReturnTypeModel().getChildren(), function (child) {
-                return _.isUndefined(child.getIdentifier());
+            var indexWithoutIdentifiers = _.findIndex(this.getReturnParameterDefinitionHolder().getChildren(), function (child) {
+                return _.isUndefined(child.getName());
             });
 
             if (indexWithoutIdentifiers !== -1) {
@@ -231,14 +227,10 @@ define(['lodash', './node', 'log', '../utils/common-utils'], function(_, ASTNode
     };
 
     ConnectorAction.prototype.hasReturnTypes = function () {
-        if (_.isUndefined(this.getReturnTypeModel())) {
-            return false;
+        if (this.getReturnParameterDefinitionHolder().getChildren().length > 0) {
+            return true;
         } else {
-            if (this.getReturnTypeModel().getChildren().length > 0) {
-                return true;
-            } else {
-                return false;
-            }
+            return false;
         }
     };
 
@@ -247,44 +239,14 @@ define(['lodash', './node', 'log', '../utils/common-utils'], function(_, ASTNode
      * @param {string} modelID - The id of an {Argument} which resides in the return type model.
      */
     ConnectorAction.prototype.removeReturnType = function (modelID) {
-        var self = this;
-        var argumentToRemove = undefined;
-
-        // Find the argument to remove/delete.
-        _.forEach(self.getReturnTypeModel().getChildren(), function (argument) {
-            if (argument.getID() == modelID) {
-                argumentToRemove = argument;
-                // break
-                return false;
-            }
-        });
+        var removeChild = this.getReturnParameterDefinitionHolder().removeChildById(this.getFactory().isParameterDefinition, modelID);
 
         // Deleting the argument from the AST.
-        if (!_.isUndefined(argumentToRemove)) {
-            self.getReturnTypeModel().removeChild(argumentToRemove);
-        } else {
-            var exceptionString = "Could not find a return type with ID: " + modelID;
+        if (_.isUndefined(removeChild)) {
+            var exceptionString = "Could not find a return type with id : " + modelID;
             log.error(exceptionString);
             throw exceptionString;
         }
-    };
-
-    /**
-     * Gets the return type model. A connector action definition can have only one {ReturnType} model.
-     * @return {ReturnType|undefined} - The return type model.
-     */
-    ConnectorAction.prototype.getReturnTypeModel = function() {
-        var self = this;
-        var returnTypeModel = undefined;
-        _.forEach(this.getChildren(), function (child) {
-            if (self.getFactory().isReturnType(child)) {
-                returnTypeModel = child;
-                // break
-                return false;
-            }
-        });
-
-        return returnTypeModel;
     };
 
     //// End of return type functions.
@@ -297,8 +259,8 @@ define(['lodash', './node', 'log', '../utils/common-utils'], function(_, ASTNode
         var argsAsString = "";
         var args = this.getArguments();
         _.forEach(args, function(argument, index){
-            argsAsString += argument.type + " ";
-            argsAsString += argument.identifier;
+            argsAsString += argument.getTypeName() + " ";
+            argsAsString += argument.getName();
             if (args.length - 1 != index) {
                 argsAsString += " , ";
             }
@@ -313,18 +275,14 @@ define(['lodash', './node', 'log', '../utils/common-utils'], function(_, ASTNode
      */
     ConnectorAction.prototype.addArgument = function(type, identifier) {
         //creating argument
-        var newArgument = this.getFactory().createArgument();
-        newArgument.setType(type);
-        newArgument.setIdentifier(identifier);
+        var newArgumentParamDef = this.getFactory().createParameterDefinition();
+        newArgumentParamDef.setTypeName(type);
+        newArgumentParamDef.setName(identifier);
 
-        var self = this;
+        var argParamDefHolder = this.getArgumentParameterDefinitionHolder();
+        var index = argParamDefHolder.getChildren().length;
 
-        // Get the index of the last argument declaration.
-        var index = _.findLastIndex(this.getChildren(), function (child) {
-            return self.getFactory().isArgument(child);
-        });
-
-        this.addChild(newArgument, index + 1);
+        argParamDefHolder.addChild(newArgumentParamDef, index + 1);
     };
 
     /**
@@ -333,10 +291,8 @@ define(['lodash', './node', 'log', '../utils/common-utils'], function(_, ASTNode
      * @return {Array} - The removed argument.
      */
     ConnectorAction.prototype.removeArgument = function(identifier) {
-        var self = this;
-        _.remove(this.getChildren(), function (child) {
-            return self.getFactory().isArgument(child) && child.getIdentifier() === identifier;
-        });
+        var argParamDefHolder = this.getArgumentParameterDefinitionHolder();
+        argParamDefHolder.removeChildByName(this.getFactory().isParameterDefinition, identifier);
     };
 
     ConnectorAction.prototype.getConnectionDeclarations = function () {

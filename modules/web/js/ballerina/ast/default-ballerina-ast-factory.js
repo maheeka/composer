@@ -54,10 +54,7 @@ define(['lodash', './ballerina-ast-factory'], function (_, BallerinaASTFactory) 
      */
     DefaultBallerinaASTFactory.createConnectorDefinition = function (args) {
         var connectorDef = BallerinaASTFactory.createConnectorDefinition(args);
-        var connectorArg = BallerinaASTFactory.createResourceParameter();
-        connectorArg.setType("message");
-        connectorArg.setIdentifier("m");
-        connectorDef.addChild(connectorArg);
+        connectorDef.addArgument("message", "m");
         return connectorDef;
     };
 
@@ -67,10 +64,7 @@ define(['lodash', './ballerina-ast-factory'], function (_, BallerinaASTFactory) 
      */
     DefaultBallerinaASTFactory.createConnectorAction = function (args) {
         var actionDef = BallerinaASTFactory.createConnectorAction(args);
-        var actionArg = BallerinaASTFactory.createResourceParameter();
-        actionArg.setType("message");
-        actionArg.setIdentifier("m");
-        actionDef.addChild(actionArg);
+        actionDef.addArgument("message", "m");
         return actionDef;
     };
 

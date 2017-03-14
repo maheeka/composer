@@ -73,8 +73,8 @@ define(['lodash', 'log', 'event_channel', './abstract-symbol-table-gen-visitor',
             var args = [];
             _.forEach(functionDefinition.getArguments(), function (argument) {
                 args.push({
-                    name: argument.getIdentifier(),
-                    type: argument.getType()
+                    name: argument.getName(),
+                    type: argument.getTypeName()
                 })
             });
             functionDef.setParameters(args);
@@ -84,8 +84,8 @@ define(['lodash', 'log', 'event_channel', './abstract-symbol-table-gen-visitor',
             _.forEach(functionDefinition.getReturnTypes(), function (returnType) {
                 // Return type contains an Argument child.
                 returnTypes.push({
-                    name: returnType.getIdentifier(),
-                    type: returnType.getType()
+                    name: returnType.getName(),
+                    type: returnType.getTypeName()
                 })
             });
             functionDef.setReturnParams(returnTypes);
@@ -241,8 +241,8 @@ define(['lodash', 'log', 'event_channel', './abstract-symbol-table-gen-visitor',
                     var args = [];
                     _.forEach(functionDefinition.getArguments(), function (argument) {
                         args.push({
-                            name: argument.getIdentifier(),
-                            type: argument.getType()
+                            name: argument.getName(),
+                            type: argument.getTypeName()
                         })
                     });
                     functionDef.setParameters(args);

@@ -26,13 +26,12 @@ define(['lodash', './node'], function (_, ASTNode) {
      * @param configEnd
      * @constructor
      */
-    var CallableDefinition = function (type) {
+    var CallableDefinition = function (args) {
+        ASTNode.call(this, 'CallableDefinition');
         this.connectionDeclarations = [];
         this.variableDeclarations = [];
         this.workerDeclarations = [];
         this.statements = [];
-
-        ASTNode.call(this, type);
     };
 
     CallableDefinition .prototype = Object.create(ASTNode.prototype);

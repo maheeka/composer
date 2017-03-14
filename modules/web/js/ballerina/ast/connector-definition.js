@@ -20,11 +20,11 @@ define(['lodash', './node', 'log', '../utils/common-utils'], function(_, ASTNode
     /**
      * Constructor for ConnectorDefinition
      * @param {object} args - Constructor arguments
+     * contains {Annotation|ParameterDefinition|Statement|Worker} members as children
      * @constructor
      */
     var ConnectorDefinition = function(args) {
         ASTNode.call(this, "ConnectorDefinition");
-        this.BallerinaASTFactory = this.getFactory();
         this.connector_name = _.get(args, 'connector_name');
         this.annotations = _.get(args, 'annotations', []);
         this.arguments = _.get(args, 'arguments', []);
@@ -50,18 +50,11 @@ define(['lodash', './node', 'log', '../utils/common-utils'], function(_, ASTNode
     };
 
     /**
-     * Get the connector Arguments
-     * @return {Object[]} arguments - Connector Arguments
+     * Get the connector arguments
+     * @return {ParameterDefinition[]} arguments - Connector Arguments
      */
     ConnectorDefinition.prototype.getArguments = function () {
-        var argumentsList = [];
-        var self = this;
-        _.forEach(this.getChildren(), function (child) {
-            if (self.BallerinaASTFactory.isArgument(child)) {
-                argumentsList.push(child);
-            }
-        });
-        return argumentsList;
+        return this.getArgumentParameterDefinitionHolder().getChildren();
     };
 
     /**
@@ -70,19 +63,14 @@ define(['lodash', './node', 'log', '../utils/common-utils'], function(_, ASTNode
      * @param identifier - The identifier of the argument.
      */
     ConnectorDefinition.prototype.addArgument = function(type, identifier) {
-        //creating argument
-        var newArgument = this.BallerinaASTFactory.createArgument();
-        newArgument.setType(type);
-        newArgument.setIdentifier(identifier);
+        var newArgumentParamDef = this.getFactory().createParameterDefinition();
+        newArgumentParamDef.setTypeName(type);
+        newArgumentParamDef.setName(identifier);
 
-        var self = this;
+        var argParamDefHolder = this.getArgumentParameterDefinitionHolder();
+        var index = argParamDefHolder.getChildren().length;
 
-        // Get the index of the last argument declaration.
-        var index = _.findLastIndex(this.getChildren(), function (child) {
-            return self.BallerinaASTFactory.isArgument(child);
-        });
-
-        this.addChild(newArgument, index + 1);
+        argParamDefHolder.addChild(newArgumentParamDef, index + 1);
     };
 
     /**
@@ -91,10 +79,30 @@ define(['lodash', './node', 'log', '../utils/common-utils'], function(_, ASTNode
      * @return {Array} - The removed argument.
      */
     ConnectorDefinition.prototype.removeArgument = function(identifier) {
-        var self = this;
-        _.remove(this.getChildren(), function (child) {
-            return self.BallerinaASTFactory.isArgument(child) && child.getIdentifier() === identifier;
+        this.getArgumentParameterDefinitionHolder().removeChildByName(this.getFactory().isParameterDefinition, identifier);
+    };
+
+    ConnectorDefinition.prototype.getArgumentParameterDefinitionHolder = function () {
+        var argParamDefHolder = this.findChild(this.getFactory().isArgumentParameterDefinitionHolder);
+        if (_.isUndefined(argParamDefHolder)) {
+            argParamDefHolder = this.getFactory().createArgumentParameterDefinitionHolder();
+            this.addChild(argParamDefHolder);
+        }
+        return argParamDefHolder;
+    };
+
+    /**
+     * Returns the list of arguments as a string separated by commas.
+     * @return {string} - Arguments as string.
+     */
+    ConnectorDefinition.prototype.getArgumentsAsString = function () {
+        var argsStringArray = [];
+        var args = this.getArguments();
+        _.forEach(args, function(arg){
+            argsStringArray.push(arg.getParameterDefinitionAsString());
         });
+
+        return _.join(argsStringArray, ', ');
     };
 
     /**
@@ -117,7 +125,7 @@ define(['lodash', './node', 'log', '../utils/common-utils'], function(_, ASTNode
      * @param index
      */
     ConnectorDefinition.prototype.addChild = function (child, index) {
-        if (this.BallerinaASTFactory.isConnectorDeclaration(child)) {
+        if (this.getFactory().isConnectorDeclaration(child)) {
             Object.getPrototypeOf(this.constructor.prototype).addChild.call(this, child, 0);
         } else {
             Object.getPrototypeOf(this.constructor.prototype).addChild.call(this, child, index);
@@ -280,10 +288,10 @@ define(['lodash', './node', 'log', '../utils/common-utils'], function(_, ASTNode
             var child = undefined;
             var childNodeTemp = undefined;
             if (childNode.type === "variable_definition_statement" && !_.isNil(childNode.children[1]) && childNode.children[1].type === 'connector_init_expr') {
-                child = self.BallerinaASTFactory.createConnectorDeclaration();
+                child = self.getFactory().createConnectorDeclaration();
                 childNodeTemp = childNode;
             } else {
-                child = self.BallerinaASTFactory.createFromJson(childNode);
+                child = self.getFactory().createFromJson(childNode);
                 childNodeTemp = childNode;
             }
             self.addChild(child);
@@ -298,9 +306,9 @@ define(['lodash', './node', 'log', '../utils/common-utils'], function(_, ASTNode
      * @return {boolean}
      */
     ConnectorDefinition.prototype.canBeParentOf = function (node) {
-        return this.BallerinaASTFactory.isConnectorAction(node)
-            || this.BallerinaASTFactory.isVariableDeclaration(node)
-            || this.BallerinaASTFactory.isConnectorDeclaration(node);
+        return this.getFactory().isConnectorAction(node)
+            || this.getFactory().isVariableDeclaration(node)
+            || this.getFactory().isConnectorDeclaration(node);
     };
 
     /**

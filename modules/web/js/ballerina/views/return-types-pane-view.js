@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-define(['lodash', 'log', 'jquery', 'alerts', './return-type-view', './../ast/node','select2'],
+define(['lodash', 'log', 'jquery', 'alerts', './return-parameter-definition-view', './../ast/node','select2'],
     function (_, log, $, Alerts, ReturnTypeView, ASTNode, select2) {
 
         /**

@@ -390,6 +390,63 @@ define(['log', 'require', 'event_channel', 'lodash'], function(log, require, Eve
     };
 
     /**
+     * Find matching child from the predicate function
+     * @param predicateFunction a function returning a boolean to match find condition from children
+     */
+    ASTNode.prototype.findChild = function (predicateFunction) {
+        return _.find(this.getChildren(), predicateFunction);
+    };
+
+    /**
+     * Remove matching child from the predicate function
+     * @param predicateFunction a function returning a boolean to match remove condition from children
+     * @param name of child to remove
+     */
+    ASTNode.prototype.removeChildByName = function (predicateFunction, name) {
+        _.remove(this.getChildren(), function (child) {
+            return predicateFunction && (child.getName() === name);
+        });
+    };
+
+    /**
+     * Remove matching child from the predicate function
+     * @param predicateFunction a function returning a boolean to match remove condition from children
+     * @param identifier of child to remove
+     */
+    ASTNode.prototype.removeChildById = function (predicateFunction, id) {
+        _.remove(this.getChildren(), function (child) {
+            return predicateFunction && (child.getID() === id);
+        });
+    };
+
+    /**
+     * Find matching child from the predicate function
+     * @param predicateFunction a function returning a boolean to match find condition from children
+     * @param identifier of child to find
+     */
+    ASTNode.prototype.findChildByIdentifier = function (predicateFunction, identifier) {
+        return _.find((_.filter(this.getChildren(), predicateFunction)), function (child) {
+            child.getName() === identifier;
+        });
+    };
+
+    /**
+     * Filter matching children from the predicate function
+     * @param predicateFunction a function returning a boolean to match filter condition from children
+     */
+    ASTNode.prototype.filterChildren = function (predicateFunction) {
+        return _.filter(this.getChildren(), predicateFunction);
+    };
+
+    /**
+     * Find last index of matching children from the predicate function
+     * @param predicateFunction a function returning a boolean to match find condition from children
+     */
+    ASTNode.prototype.findLastIndexOfChild = function(predicateFunction) {
+        return _.findLastIndex(this.getChildren(), predicateFunction);
+    };
+
+    /**
      * Function which should be used to generate unique values for attributes. Ex: newStruct, newStruct1, newStruct2.
      */
     ASTNode.prototype.generateUniqueIdentifiers = function() {};

@@ -26,13 +26,13 @@ public class BLangJSONModelConstants {
 
     public static final String DEFINITION_TYPE = "type";
 
-    public static final String CONNECTOR_DEFINITION = "connector";
+    public static final String CONNECTOR_DEFINITION = "connector_definition";
 
     public static final String FUNCTION_DEFINITION = "function_definition";
 
     public static final String TYPE_MAPPER_DEFINITION = "type_mapper_definition";
 
-    public static final String ACTION_DEFINITION = "action";
+    public static final String ACTION_DEFINITION = "action_definition";
 
     public static final String FUNCTIONS_NAME = "function_name";
 
@@ -72,11 +72,9 @@ public class BLangJSONModelConstants {
 
     public static final String ANNOTATION_DEFINITIONS = "annotations";
 
-    public static final String PARAMETER_DEFINITION = "argument_declaration";
+    public static final String PARAMETER_DEFINITION = "parameter_definition";
 
-    public static final String CONNECTOR_DECLARATION = "connector_declaration";
-
-    public static final String VARIABLE_DECLARATION = "variable_declaration";
+    public static final String RESOURCE_ARGUMENT = "resource_argument";
 
     public static final String VARIABLE_DEFINITION = "variable_definition";
 
@@ -104,17 +102,9 @@ public class BLangJSONModelConstants {
 
     public static final String PARAMETER_TYPE = "parameter_type";
 
-    public static final String CONNECTOR_DCL_NAME = "connector_name";
-
-    public static final String CONNECTOR_DCL_PKG_NAME = "connector_pkg_name";
-
-    public static final String CONNECTOR_DCL_VARIABLE = "connector_variable";
-
     public static final String VARIABLE_NAME = "variable_name";
 
     public static final String VARIABLE_TYPE = "variable_type";
-
-    public static final String BLOCK_STATEMENT = "block_statement";
 
     public static final String CONNECTOR_NAME = "connector_name";
 
@@ -124,9 +114,9 @@ public class BLangJSONModelConstants {
 
     public static final String ACTION_CONNECTOR_NAME = "action_connector_name";
 
-    public static final String STATEMENT_TYPE = "type";
+    public static final String STATEMENT_TYPE = "type"; //TODO : generalize
 
-    public static final String EXPRESSION_TYPE = "type";
+    public static final String EXPRESSION_TYPE = "type"; //TODO : generalize
 
     public static final String COMMENT_STATEMENT = "comment_statement";
 
@@ -265,4 +255,8 @@ public class BLangJSONModelConstants {
     public static final String CATCH_BLOCK = "catch_block";
 
     public static final String THROW_STATEMENT = "throw_statement";
+
+    public static final String ARGUMENT_PARAMETER_DEFINITIONS = "argument_parameter_definitions";
+
+    public static final String RETURN_PARAMETER_DEFINITIONS = "return_parameter_definitions";
 }

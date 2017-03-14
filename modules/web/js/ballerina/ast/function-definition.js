@@ -27,27 +27,14 @@ define(['lodash', 'log', './node', './callable-definition', '../utils/common-uti
      * @constructor
      */
     var FunctionDefinition = function (args) {
-        this.id = autoGenerateId();
-        CallableDefinition.call(this, 'Function');
+        CallableDefinition.call(this, 'FunctionDefinition');
         this._functionName = _.get(args, 'functionName');
         this._isPublic = _.get(args, "isPublic") || false;
         this._annotations = _.get(args, 'annotations', []);
-        this.BallerinaASTFactory = this.getFactory();
     };
 
     FunctionDefinition.prototype = Object.create(CallableDefinition.prototype);
     FunctionDefinition.prototype.constructor = FunctionDefinition;
-
-    // Auto generated Id for function definitions (for accordion views)
-    function autoGenerateId(){
-        function s4() {
-            return Math.floor((1 + Math.random()) * 0x10000)
-                .toString(16)
-                .substring(1);
-        }
-        return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
-            s4() + '-' + s4() + s4() + s4();
-    }
 
     FunctionDefinition.prototype.setFunctionName = function(name, options){
         if (!_.isNil(name) && ASTNode.isValidIdentifier(name)) {
@@ -70,15 +57,7 @@ define(['lodash', 'log', './node', './callable-definition', '../utils/common-uti
     };
 
     FunctionDefinition.prototype.getArguments = function () {
-        var functionArgs = [];
-        var self = this;
-
-        _.forEach(this.getChildren(), function (child) {
-            if (self.BallerinaASTFactory.isArgument(child) && !self.BallerinaASTFactory.isReturnType(child)) {
-                functionArgs.push(child);
-            }
-        });
-        return functionArgs;
+        return this.getArgumentParameterDefinitionHolder().getChildren();
     };
 
     FunctionDefinition.prototype.getIsPublic = function () {
@@ -86,15 +65,7 @@ define(['lodash', 'log', './node', './callable-definition', '../utils/common-uti
     };
 
     FunctionDefinition.prototype.getVariableDefinitionStatements = function () {
-        var variableDefinitionStatements = [];
-        var self = this;
-
-        _.forEach(this.getChildren(), function (child) {
-            if (self.BallerinaASTFactory.isVariableDefinitionStatement(child)) {
-                variableDefinitionStatements.push(child);
-            }
-        });
-        return variableDefinitionStatements;
+        return this.filterChildren(this.getFactory().isVariableDefinitionStatement).slice(0);
     };
 
     /**
@@ -102,18 +73,12 @@ define(['lodash', 'log', './node', './callable-definition', '../utils/common-uti
      */
     FunctionDefinition.prototype.addVariableDeclaration = function (newVariableDeclaration) {
         // Get the index of the last variable declaration.
-        var self = this;
-
-        var index = _.findLastIndex(this.getChildren(), function (child) {
-            return self.BallerinaASTFactory.isVariableDeclaration(child);
-        });
+        var index = this.findLastIndexOfChild(this.getFactory().isVariableDeclaration);
 
         // index = -1 when there are not any variable declarations, hence get the index for connector
         // declarations.
         if (index == -1) {
-            index = _.findLastIndex(this.getChildren(), function (child) {
-                return self.BallerinaASTFactory.isConnectorDeclaration(child);
-            });
+            var index = this.findLastIndexOfChild(this.getFactory().isConnectorDeclaration);
         }
 
         this.addChild(newVariableDeclaration, index + 1);
@@ -123,13 +88,8 @@ define(['lodash', 'log', './node', './callable-definition', '../utils/common-uti
      * Adds new variable declaration.
      */
     FunctionDefinition.prototype.removeVariableDeclaration = function (variableDeclarationIdentifier) {
-        var self = this;
         // Removing the variable from the children.
-        var variableDeclarationChild = _.find(this.getChildren(), function (child) {
-            return self.BallerinaASTFactory.isVariableDeclaration(child)
-                && child.getIdentifier() === variableDeclarationIdentifier;
-        });
-        this.removeChild(variableDeclarationChild);
+        this.removeChildByIdentifier = _.remove(this.getFactory().isVariableDeclaration, variableDeclarationIdentifier);
     };
 
     /**
@@ -137,17 +97,13 @@ define(['lodash', 'log', './node', './callable-definition', '../utils/common-uti
      * @return {string} - Arguments as string.
      */
     FunctionDefinition.prototype.getArgumentsAsString = function () {
-        var argsAsString = "";
+        var argsStringArray = [];
         var args = this.getArguments();
-        _.forEach(args, function(argument, index){
-            argsAsString += argument.type + " ";
-            argsAsString += argument.identifier;
-            if (args.length - 1 != index) {
-                argsAsString += ", ";
-            }
+        _.forEach(args, function(arg){
+            argsStringArray.push(arg.getParameterDefinitionAsString());
         });
 
-        return argsAsString;
+        return _.join(argsStringArray, ', ');
     };
 
     /**
@@ -156,19 +112,14 @@ define(['lodash', 'log', './node', './callable-definition', '../utils/common-uti
      * @param identifier - The identifier of the argument.
      */
     FunctionDefinition.prototype.addArgument = function(type, identifier) {
-        //creating resource argument
-        var newArgument = this.BallerinaASTFactory.createArgument();
-        newArgument.setType(type);
-        newArgument.setIdentifier(identifier);
+        var newArgumentParamDef = this.getFactory().createParameterDefinition();
+        newArgumentParamDef.setTypeName(type);
+        newArgumentParamDef.setName(identifier);
 
-        var self = this;
+        var argParamDefHolder = this.getArgumentParameterDefinitionHolder();
+        var index = argParamDefHolder.getChildren().length;
 
-        // Get the index of the last resource argument declaration.
-        var index = _.findLastIndex(this.getChildren(), function (child) {
-            return self.BallerinaASTFactory.isArgument(child);
-        });
-
-        this.addChild(newArgument, index + 1);
+        argParamDefHolder.addChild(newArgumentParamDef, index + 1);
     };
 
     /**
@@ -177,22 +128,28 @@ define(['lodash', 'log', './node', './callable-definition', '../utils/common-uti
      * @return {Array} - The removed argument.
      */
     FunctionDefinition.prototype.removeArgument = function(identifier) {
-        var self = this;
-        _.remove(this.getChildren(), function (child) {
-            return self.BallerinaASTFactory.isArgument(child) && child.getIdentifier() === identifier;
-        });
+        this.getArgumentParameterDefinitionHolder().removeChildByName(this.getFactory().isParameterDefinition, identifier);
+    };
+
+    FunctionDefinition.prototype.getArgumentParameterDefinitionHolder = function () {
+        var argParamDefHolder = this.findChild(this.getFactory().isArgumentParameterDefinitionHolder);
+        if (_.isUndefined(argParamDefHolder)) {
+            argParamDefHolder = this.getFactory().createArgumentParameterDefinitionHolder();
+            this.addChild(argParamDefHolder);
+        }
+        return argParamDefHolder;
     };
 
     //// Start of return type functions.
 
     /**
      * Gets the return type as a string separated by commas.
-     * @return {string} - Return types.
+     * @return {string} - Return types separated by comma.
      */
     FunctionDefinition.prototype.getReturnTypesAsString = function () {
         var returnTypes = [];
-        _.forEach(this.getReturnTypes(), function (returnTypeChild) {
-            returnTypes.push(returnTypeChild.getArgumentAsString())
+        _.forEach(this.getReturnParameterDefinitionHolder().getChildren(), function (returnType) {
+            returnTypes.push(returnType.getParameterDefinitionAsString())
         });
 
         return _.join(returnTypes, ", ");
@@ -203,8 +160,7 @@ define(['lodash', 'log', './node', './callable-definition', '../utils/common-uti
      * @return {Argument[]} - Array of args.
      */
     FunctionDefinition.prototype.getReturnTypes = function () {
-        var returnTypeModel = this.getReturnTypeModel();
-        return !_.isUndefined(returnTypeModel) ? this.getReturnTypeModel().getChildren().slice(0) : [];
+        return this.getReturnParameterDefinitionHolder().getChildren();
     };
 
     /**
@@ -215,20 +171,16 @@ define(['lodash', 'log', './node', './callable-definition', '../utils/common-uti
     FunctionDefinition.prototype.addReturnType = function (type, identifier) {
         var self = this;
 
-        // Adding return type mode if it doesn't exists.
-        if (_.isUndefined(this.getReturnTypeModel())) {
-            this.addChild(this.BallerinaASTFactory.createReturnType());
-        }
+        var returnParamDefHolder = this.getReturnParameterDefinitionHolder();
 
         // Check if there is already a return type with the same identifier.
         if (!_.isUndefined(identifier)) {
-            _.forEach(this.getReturnTypeModel().getChildren(), function(child) {
-                if (child.getIdentifier() === identifier) {
-                    var errorString = "An argument with identifier '" + identifier + "' already exists.";
-                    log.error(errorString);
-                    throw errorString;
-                }
-            });
+            var child = returnParamDefHolder.findChildByIdentifier(true, identifier);
+            if (_.isUndefined(child)) {
+                var errorString = "An return argument with identifier '" + identifier + "' already exists.";
+                log.error(errorString);
+                throw errorString;
+            }
         }
 
         // Validating whether return type can be added based on identifiers of other return types.
@@ -248,30 +200,18 @@ define(['lodash', 'log', './node', './callable-definition', '../utils/common-uti
             }
         }
 
-        var argument = this.BallerinaASTFactory.createArgument({type: type, identifier: identifier});
-
-        var existingReturnType = self.getReturnTypeModel();
-
-        // Adding the new argument input position.
-        if (!_.isNil(existingReturnType)) {
-            existingReturnType.addChild(argument, existingReturnType.getChildren().length + 1);
-        } else {
-            var returnType = this.BallerinaASTFactory.createReturnType();
-            returnType.addChild(argument, 0);
-            this.addChild(returnType);
-        }
+        var paramDef = this.getFactory().createParameterDefinition({typeName: type, name: identifier});
+        returnParamDefHolder.addChild(paramDef, 0);
     };
 
     FunctionDefinition.prototype.hasNamedReturnTypes = function () {
-        if (_.isUndefined(this.getReturnTypeModel())) {
-            return false;
-        } else if (this.getReturnTypeModel().getChildren().length == 0) {
+        if (this.getReturnParameterDefinitionHolder().getChildren().length == 0) {
             //if there are no return types in the return type model
             return false;
         } else {
             //check if any of the return types have identifiers
-            var indexWithoutIdentifiers = _.findIndex(this.getReturnTypeModel().getChildren(), function (child) {
-                return _.isUndefined(child.getIdentifier());
+            var indexWithoutIdentifiers = _.findIndex(this.getReturnParameterDefinitionHolder().getChildren(), function (child) {
+                return _.isUndefined(child.getName());
             });
 
             if (indexWithoutIdentifiers !== -1) {
@@ -283,58 +223,35 @@ define(['lodash', 'log', './node', './callable-definition', '../utils/common-uti
     };
 
     FunctionDefinition.prototype.hasReturnTypes = function () {
-        if (_.isUndefined(this.getReturnTypeModel())) {
-            return false;
+        if (this.getReturnParameterDefinitionHolder().getChildren().length > 0) {
+            return true;
         } else {
-            if (this.getReturnTypeModel().getChildren().length > 0) {
-                return true;
-            } else {
-                return false;
-            }
+            return false;
         }
     };
 
     /**
      * Removes return type argument from the return type model.
-     * @param {string} modelID - The id of an {Argument} which resides in the return type model.
+     * @param {string} identifier - The identifier of a {ParameterDefinition} which resides in the return type model.
      */
     FunctionDefinition.prototype.removeReturnType = function (modelID) {
-        var self = this;
-        var argumentToRemove = undefined;
-
-        // Find the argument to remove/delete.
-        _.forEach(self.getReturnTypeModel().getChildren(), function (argument) {
-            if (argument.getID() == modelID) {
-                argumentToRemove = argument;
-                // break
-                return false;
-            }
-        });
+        var removeChild = this.getReturnParameterDefinitionHolder().removeChildById(this.getFactory().isParameterDefinition, modelID);
 
         // Deleting the argument from the AST.
-        if (!_.isUndefined(argumentToRemove)) {
-            self.getReturnTypeModel().removeChild(argumentToRemove);
-        } else {
-            var exceptionString = "Could not find a return type with ID: " + modelID;
+        if (_.isUndefined(removeChild)) {
+            var exceptionString = "Could not find a return type with id : " + modelID;
             log.error(exceptionString);
             throw exceptionString;
         }
     };
 
-    /**
-     * Gets the return type model. A function definition can have only one {ReturnType} model.
-     * @return {ReturnType|undefined} - The return type model.
-     */
-    FunctionDefinition.prototype.getReturnTypeModel = function() {
-        var self = this;
-        var returnTypeModel = undefined;
-        _.forEach(this.getChildren(), function (child) {
-            if (self.BallerinaASTFactory.isReturnType(child)) {
-                returnTypeModel = child;
-                return false; // break
-            }
-        });
-        return returnTypeModel;
+    FunctionDefinition.prototype.getReturnParameterDefinitionHolder = function () {
+        var returnParamDefHolder = this.findChild(this.getFactory().isReturnParameterDefinitionHolder);
+        if (_.isUndefined(returnParamDefHolder)) {
+            returnParamDefHolder = this.getFactory().createReturnParameterDefinitionHolder();
+            this.addChild(returnParamDefHolder);
+        }
+        return returnParamDefHolder;
     };
 
     //// End of return type functions.
@@ -359,7 +276,7 @@ define(['lodash', 'log', './node', './callable-definition', '../utils/common-uti
      * @param index
      */
     FunctionDefinition.prototype.addChild = function (child, index) {
-        if (this.BallerinaASTFactory.isWorkerDeclaration(child)) {
+        if (this.getFactory().isWorkerDeclaration(child)) {
             Object.getPrototypeOf(this.constructor.prototype).addChild.call(this, child, 0);
         } else {
             Object.getPrototypeOf(this.constructor.prototype).addChild.call(this, child, index);
@@ -387,10 +304,10 @@ define(['lodash', 'log', './node', './callable-definition', '../utils/common-uti
      * @return {boolean}
      */
     FunctionDefinition.prototype.canBeParentOf = function (node) {
-        return this.BallerinaASTFactory.isConnectorDeclaration(node)
-            || this.BallerinaASTFactory.isVariableDeclaration(node)
-            || this.BallerinaASTFactory.isWorkerDeclaration(node)
-            || this.BallerinaASTFactory.isStatement(node);
+        return this.getFactory().isConnectorDeclaration(node)
+            || this.getFactory().isVariableDeclaration(node)
+            || this.getFactory().isWorkerDeclaration(node)
+            || this.getFactory().isStatement(node);
     };
 
     /**
@@ -412,10 +329,10 @@ define(['lodash', 'log', './node', './callable-definition', '../utils/common-uti
             var childNodeTemp = undefined;
             //TODO : generalize this logic
             if (childNode.type === "variable_definition_statement" && !_.isNil(childNode.children[1]) && childNode.children[1].type === 'connector_init_expr') {
-                child = self.BallerinaASTFactory.createConnectorDeclaration();
+                child = self.getFactory().createConnectorDeclaration();
                 childNodeTemp = childNode;
             } else {
-                child = self.BallerinaASTFactory.createFromJson(childNode);
+                child = self.getFactory().createFromJson(childNode);
                 childNodeTemp = childNode;
             }
             self.addChild(child);

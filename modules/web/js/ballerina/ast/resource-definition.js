@@ -28,6 +28,7 @@ define(['lodash', 'require', 'log', './node', '../utils/common-utils'],
      * @constructor
      */
     var ResourceDefinition = function (args) {
+        ASTNode.call(this, 'Resource');
         this._resourceName = _.get(args, 'resourceName');
         this._annotations = _.get(args, 'annotations', []);
 
@@ -68,13 +69,8 @@ define(['lodash', 'require', 'log', './node', '../utils/common-utils'],
             });
         }
 
-        // TODO: All the types should be referred from the global constants
-        ASTNode.call(this, 'Resource', 'resource {', '}');
-
-        this.BallerinaASTFactory = this.getFactory();
-
         // Adding the default worker declaration.
-        var defaultWorker = this.BallerinaASTFactory.createWorkerDeclaration({isDefaultWorker: true});
+        var defaultWorker = this.getFactory().createWorkerDeclaration({isDefaultWorker: true});
         this.addChild(defaultWorker);
     };
 
@@ -95,7 +91,7 @@ define(['lodash', 'require', 'log', './node', '../utils/common-utils'],
         var self = this;
 
         _.forEach(this.getChildren(), function (child) {
-            if (self.BallerinaASTFactory.isVariableDefinitionStatement(child)) {
+            if (self.getFactory().isVariableDefinitionStatement(child)) {
                 variableDefinitionStatements.push(child);
             }
         });
@@ -107,7 +103,7 @@ define(['lodash', 'require', 'log', './node', '../utils/common-utils'],
         var self = this;
 
         _.forEach(this.getChildren(), function (child) {
-            if (self.BallerinaASTFactory.isResourceParameter(child)) {
+            if (self.getFactory().isResourceParameter(child)) {
                 resourceParameters.push(child);
             }
         });
@@ -129,14 +125,14 @@ define(['lodash', 'require', 'log', './node', '../utils/common-utils'],
         var self = this;
         // Get the index of the last variable declaration.
         var index = _.findLastIndex(this.getChildren(), function (child) {
-            return self.BallerinaASTFactory.isVariableDeclaration(child);
+            return self.getFactory().isVariableDeclaration(child);
         });
 
         // index = -1 when there are not any variable declarations, hence get the index for connector
         // declarations.
         if (index == -1) {
             index = _.findLastIndex(this.getChildren(), function (child) {
-                return self.BallerinaASTFactory.isConnectorDeclaration(child);
+                return self.getFactory().isConnectorDeclaration(child);
             });
         }
 
@@ -150,7 +146,7 @@ define(['lodash', 'require', 'log', './node', '../utils/common-utils'],
         var self = this;
         // Removing the variable from the children.
         var variableDeclarationChild = _.find(this.getChildren(), function (child) {
-            return self.BallerinaASTFactory.isVariableDeclaration(child)
+            return self.getFactory().isVariableDeclaration(child)
                 && child.getIdentifier() === variableDeclarationIdentifier;
         });
         this.removeChild(variableDeclarationChild);
@@ -194,7 +190,7 @@ define(['lodash', 'require', 'log', './node', '../utils/common-utils'],
             throw errorString;
         } else {
             // Creating resource parameter
-            var newParameter = this.BallerinaASTFactory.createResourceParameter();
+            var newParameter = this.getFactory().createResourceParameter();
             newParameter.setAnnotationType(annotationType);
             newParameter.setAnnotationText(annotationText);
             newParameter.setType(parameterType);
@@ -204,7 +200,7 @@ define(['lodash', 'require', 'log', './node', '../utils/common-utils'],
 
             // Get the index of the last resource parameter declaration.
             var index = _.findLastIndex(this.getChildren(), function (child) {
-                return self.BallerinaASTFactory.isResourceParameter(child);
+                return self.getFactory().isResourceParameter(child);
             });
 
             this.addChild(newParameter, index + 1);
@@ -219,7 +215,7 @@ define(['lodash', 'require', 'log', './node', '../utils/common-utils'],
         var self = this;
         // Deleting the variable from the children.
         var resourceParameter = _.find(this.getChildren(), function (child) {
-            return self.BallerinaASTFactory.isResourceParameter(child) && child.id === modelID;
+            return self.getFactory().isResourceParameter(child) && child.id === modelID;
         });
 
         this.removeChild(resourceParameter);
@@ -239,7 +235,7 @@ define(['lodash', 'require', 'log', './node', '../utils/common-utils'],
      * @param index
      */
     ResourceDefinition.prototype.addChild = function (child, index) {
-        if (this.BallerinaASTFactory.isConnectorDeclaration(child)) {
+        if (this.getFactory().isConnectorDeclaration(child)) {
             Object.getPrototypeOf(this.constructor.prototype).addChild.call(this, child, 0);
         } else {
             Object.getPrototypeOf(this.constructor.prototype).addChild.call(this, child, index);
@@ -254,7 +250,7 @@ define(['lodash', 'require', 'log', './node', '../utils/common-utils'],
         if (!_.isNil(key) && !_.isNil(value)) {
             var options = {
               predicate: {key: key}
-            }
+            };
             this.pushToArrayAttribute('_annotations', {key: key, value: value}, options);
         } else {
             var errorString = "Cannot add annotation @" + key + "(\"" + value + "\").";
@@ -298,10 +294,10 @@ define(['lodash', 'require', 'log', './node', '../utils/common-utils'],
      * @return {boolean}
      */
     ResourceDefinition.prototype.canBeParentOf = function (node) {
-        return this.BallerinaASTFactory.isConnectorDeclaration(node)
-            || this.BallerinaASTFactory.isVariableDeclaration(node)
-            || this.BallerinaASTFactory.isWorkerDeclaration(node)
-            || this.BallerinaASTFactory.isStatement(node);
+        return this.getFactory().isConnectorDeclaration(node)
+            || this.getFactory().isVariableDeclaration(node)
+            || this.getFactory().isWorkerDeclaration(node)
+            || this.getFactory().isStatement(node);
     };
 
     /**
@@ -377,10 +373,10 @@ define(['lodash', 'require', 'log', './node', '../utils/common-utils'],
             var child = undefined;
             var childNodeTemp = undefined;
             if (childNode.type === "variable_definition_statement" && !_.isNil(childNode.children[1]) && childNode.children[1].type === 'connector_init_expr') {
-                child = self.BallerinaASTFactory.createConnectorDeclaration();
+                child = self.getFactory().createConnectorDeclaration();
                 childNodeTemp = childNode;
             } else {
-                child = self.BallerinaASTFactory.createFromJson(childNode);
+                child = self.getFactory().createFromJson(childNode);
                 childNodeTemp = childNode;
             }
             self.addChild(child);
@@ -397,24 +393,24 @@ define(['lodash', 'require', 'log', './node', '../utils/common-utils'],
     ResourceDefinition.prototype.addChild = function (child, index) {
         var indexNew;
         var self = this;
-        if (self.BallerinaASTFactory.isWorkerDeclaration(child)) {
+        if (self.getFactory().isWorkerDeclaration(child)) {
             indexNew = _.findLastIndex(this.getChildren(), function (node) {
-                self.BallerinaASTFactory.isWorkerDeclaration(node);
+                self.getFactory().isWorkerDeclaration(node);
             });
             indexNew = (indexNew === -1) ? 0 : (indexNew + 1);
-        } else if (this.BallerinaASTFactory.isConnectorDeclaration(child)) {
+        } else if (this.getFactory().isConnectorDeclaration(child)) {
             var firstWorker = _.findIndex(this.getChildren(), function (node) {
-                self.BallerinaASTFactory.isWorkerDeclaration(node);
+                self.getFactory().isWorkerDeclaration(node);
             });
             if (firstWorker !== -1) {
                 indexNew = firstWorker - 1;
             }
         } else {
             var firstWorker = _.findIndex(this.getChildren(), function (node) {
-                self.BallerinaASTFactory.isWorkerDeclaration(node);
+                self.getFactory().isWorkerDeclaration(node);
             });
             var firstConnector = _.findIndex(this.getChildren(), function (node) {
-                self.BallerinaASTFactory.isWorkerDeclaration(node);
+                self.getFactory().isWorkerDeclaration(node);
             });
 
             if (firstConnector !== -1) {

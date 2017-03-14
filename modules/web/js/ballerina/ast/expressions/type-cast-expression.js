@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-define(['lodash', './expression'], function (_, Expression) {
+define(['lodash', './expression', 'log'], function (_, Expression, log) {
 
     var TypeCastExpression = function (args) {
         this._name = _.get(args, 'name', 'newTypeCastName');

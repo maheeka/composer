@@ -34,7 +34,8 @@ define(['lodash', './ballerina-ast-root', './service-definition', './function-de
         './statements/variable-definition-statement', './statements/worker-invocation-statement', './expressions/reference-type-init-expression',
         './expressions/array-init-expression', './statements/worker-reply-statement','./struct-type','./expressions/struct-field-access-expression',
         './statements/block-statement','./expressions/type-cast-expression','./variable-definition', './statements/break-statement', './statements/throw-statement', './statements/comment-statement',
-        './annotations/annotation', './annotations/annotationKeyValue', './annotations/annotationValueArray'],
+        './annotations/annotation', './annotations/annotationKeyValue', './annotations/annotationValueArray',
+        './parameter-definition', './argument-parameter-definition-holder', './return-parameter-definition-holder'],
     function (_, ballerinaAstRoot, serviceDefinition, functionDefinition, connectorDefinition, resourceDefinition,
               workerDeclaration, statement, conditionalStatement, connectorDeclaration, expression, ifElseStatement,
               ifStatement, elseStatement, elseIfStatement, tryCatchStatement, tryStatement, catchStatement, replyStatement,
@@ -47,7 +48,8 @@ define(['lodash', './ballerina-ast-root', './service-definition', './function-de
               unaryExpression, connectorAction, structDefinition, constantDefinition, variableDefinitionStatement,
               workerInvocationStatement, referenceTypeInitExpression, arrayInitExpression, workerReplyStatement,
               structType, structFieldAccessExpression,blockStatement,typeCastExpression,variableDefinition,
-              breakStatement, throwStatement, commentStatement, annotation, annotationKeyValue, annotationValueArray) {
+              breakStatement, throwStatement, commentStatement, annotation, annotationKeyValue, annotationValueArray,
+              parameterDefinition, argumentParameterDefinitionHolder, returnParameterDefinitionHolder) {
 
 
 
@@ -597,6 +599,23 @@ define(['lodash', './ballerina-ast-root', './service-definition', './function-de
          */
         BallerinaASTFactory.createAnnotationValueArray = function(args) {
             return new annotationValueArray.default(args);
+        };
+
+        /**
+        * crates ParameterDefinition
+        * @param {Object} args - Arguments for creating a new parameter definition.
+        * @returns {ParameterDefinition}
+        */
+        BallerinaASTFactory.createParameterDefinition = function (args) {
+            return new parameterDefinition(args);
+        };
+
+        BallerinaASTFactory.createArgumentParameterDefinitionHolder = function (args) {
+            return new argumentParameterDefinitionHolder();
+        };
+
+        BallerinaASTFactory.createReturnParameterDefinitionHolder = function (args) {
+            return new returnParameterDefinitionHolder();
         };
 
         /**
@@ -1160,222 +1179,251 @@ define(['lodash', './ballerina-ast-root', './service-definition', './function-de
             return child instanceof annotationValueArray.default;
         };
 
+        /**
+         * instanceof check for ParameterDefinition
+         * @param {ASTNode} child - The ast node
+         * @returns {boolean} - true if same type, else false
+         */
+        BallerinaASTFactory.isParameterDefinition = function (child) {
+            return child instanceof parameterDefinition;
+        };
+
+        /**
+         * instanceof check for ArgumentParameterDefinitionHolder
+         * @param {ASTNode} child - The ast node
+         * @returns {boolean} - true if same type, else false
+         */
+        BallerinaASTFactory.isArgumentParameterDefinitionHolder = function (child) {
+            return child instanceof argumentParameterDefinitionHolder;
+        };
+
+        /**
+         * instanceof check for ReturnParameterDefinitionHolder
+         * @param {ASTNode} child - The ast node
+         * @returns {boolean} - true if same type, else false
+         */
+        BallerinaASTFactory.isReturnParameterDefinitionHolder = function (child) {
+            return child instanceof returnParameterDefinitionHolder;
+        };
+
         BallerinaASTFactory.createFromJson = function (jsonNode) {
             var node;
             var nodeType = jsonNode.type;
 
-            if (_.isUndefined(jsonNode.type)) {
-                var statement = jsonNode.statement;
-                node = BallerinaASTFactory.createAssignment();
-            } else {
-                switch (nodeType) {
-                    case 'package':
-                        node = BallerinaASTFactory.createPackageDefinition();
-                        break;
-                    case 'import':
-                        node = BallerinaASTFactory.createImportDeclaration();
-                        break;
-                    case 'service_definition':
-                        node = BallerinaASTFactory.createServiceDefinition();
-                        break;
-                    case 'function_definition':
-                        node = BallerinaASTFactory.createFunctionDefinition();
-                        break;
-                    case 'connector_definition':
-                        node = BallerinaASTFactory.createConnectorDefinition();
-                        break;
-                    case 'type_definition':
-                        node = BallerinaASTFactory.createTypeDefinition();
-                        break;
-                    case 'resource_definition':
-                        node = BallerinaASTFactory.createResourceDefinition();
-                        break;
-                    case 'connector_declaration':
-                        node = BallerinaASTFactory.createConnectorDeclaration();
-                        break;
-                    case 'variable_definition':
-                        node = BallerinaASTFactory.createVariableDefinition();
-                        break;
-                    case 'variable_definition_statement':
-                        node = BallerinaASTFactory.createVariableDefinitionStatement();
-                        break;
-                    case 'argument_declaration':
-                        node = BallerinaASTFactory.createResourceParameter();
-                        break;
-                    case 'reply_statement':
-                        node = BallerinaASTFactory.createReplyStatement();
-                        break;
-                    case 'return_statement':
-                        node = BallerinaASTFactory.createReturnStatement();
-                        break;
-                    case 'return_type':
-                        node = BallerinaASTFactory.createReturnType();
-                        break;
-                    case 'return_argument':
-                        node = BallerinaASTFactory.createArgument();
-                        break;
-                    case 'type_name':
-                        node = BallerinaASTFactory.createTypeName();
-                        break;
-                    case 'function_invocation_statement':
-                        node = BallerinaASTFactory.createFunctionInvocationStatement();
-                        break;
-                    case 'function_invocation_expression':
-                        node = BallerinaASTFactory.createFunctionInvocationExpression();
-                        break;
-                    case 'variable_reference_name':
-                        node = BallerinaASTFactory.createVariableReferenceExpression();
-                        break;
-                    case 'variable_reference_expression':
-                        node = BallerinaASTFactory.createVariableReferenceExpression();
-                        break;
-                    case 'action_invocation_expression':
-                        node = BallerinaASTFactory.createActionInvocationExpression();
-                        break;
-                    case 'assignment_statement':
-                        node = BallerinaASTFactory.createAssignmentStatement();
-                        break;
-                    case 'back_tick_expression':
-                        node = BallerinaASTFactory.createBackTickExpression();
-                        break;
-                    case 'while_statement' :
-                        node = BallerinaASTFactory.createWhileStatement();
-                        break;
-                    case 'break_statement' :
-                        node = BallerinaASTFactory.createBreakStatement();
-                        break;
-                    case 'basic_literal_expression' :
-                        node = BallerinaASTFactory.createBasicLiteralExpression();
-                        break;
-                    case 'left_operand_expression':
-                        node = BallerinaASTFactory.createLeftOperandExpression();
-                        break;
-                    case 'right_operand_expression':
-                        node = BallerinaASTFactory.createRightOperandExpression();
-                        break;
-                    case 'if_else_statement' :
-                        node = BallerinaASTFactory.createIfElseStatement();
-                        break;
-                    case 'instance_creation_expression':
-                        node = BallerinaASTFactory.createInstanceCreationExpression();
-                        break;
-                    case 'then_body':
-                        node = BallerinaASTFactory.createThenBody();
-                        break;
-                    case 'if_condition':
-                        node = BallerinaASTFactory.createIfCondition();
-                        break;
-                    case 'equal_expression':
-                        node = BallerinaASTFactory.createBinaryExpression({"operator" : "=="});
-                        break;
-                    case 'greater_than_expression':
-                        node = BallerinaASTFactory.createBinaryExpression({"operator" : ">"});
-                        break;
-                    case 'add_expression':
-                        node = BallerinaASTFactory.createBinaryExpression({"operator" : "+"});
-                        break;
-                    case 'multiplication_expression':
-                        node = BallerinaASTFactory.createBinaryExpression({"operator" : "*"});
-                        break;
-                    case 'division_expression':
-                        node = BallerinaASTFactory.createBinaryExpression({"operator" : "/"});
-                        break;
-                    case 'mod_expression' :
-                        node = BallerinaASTFactory.createBinaryExpression({"operator" : "%"});
-                        break;
-                    case 'and_expression':
-                        node = BallerinaASTFactory.createBinaryExpression({"operator" : "&&"});
-                        break;
-                    case 'subtract_expression':
-                        node = BallerinaASTFactory.createBinaryExpression({"operator" : "-"});
-                        break;
-                    case 'or_expression':
-                        node = BallerinaASTFactory.createBinaryExpression({"operator" : "||"});
-                        break;
-                    case 'greater_equal_expression':
-                        node = BallerinaASTFactory.createBinaryExpression({"operator" : ">="});
-                        break;
-                    case 'less_than_expression':
-                        node = BallerinaASTFactory.createBinaryExpression({"operator" : "<"});
-                        break;
-                    case 'less_equal_expression':
-                        node = BallerinaASTFactory.createBinaryExpression({"operator" : "<="});
-                        break;
-                    case 'not_equal_expression':
-                        node = BallerinaASTFactory.createBinaryExpression({"operator" : "!="});
-                        break;
-                    case 'unary_expression':
-                        node = BallerinaASTFactory.createUnaryExpression({"operator" : jsonNode.operator});
-                        break;
-                    case 'array_map_access_expression':
-                        node = BallerinaASTFactory.createArrayMapAccessExpression();
-                        break;
-                    case 'connector':
-                        node = BallerinaASTFactory.createConnectorDefinition();
-                        break;
-                    case 'action':
-                        node = BallerinaASTFactory.createConnectorAction();
-                        break;
-                    case 'constant_definition':
-                        node = BallerinaASTFactory.createConstantDefinition();
-                        break;
-                    case 'struct_definition':
-                        node = BallerinaASTFactory.createStructDefinition();
-                        break;
-                    case 'key_value_expression':
-                        node = BallerinaASTFactory.createKeyValueExpression();
-                        break;
-                    case 'type_cast_expression':
-                        node = BallerinaASTFactory.createTypeCastExpression();
-                        break;
-                    case 'type_mapper_definition':
-                        node = BallerinaASTFactory.createTypeMapperDefinition();
-                        break;
-                    case 'struct_field_access_expression':
-                        node = BallerinaASTFactory.createStructFieldAccessExpression();
-                        break;
-                    case 'block_statement':
-                        node = BallerinaASTFactory.createBlockStatement();
-                        break;
-                    case 'reference_type_init_expression':
-                        node = BallerinaASTFactory.createReferenceTypeInitExpression();
-                        break;
-                    case 'array_init_expression':
-                        node = BallerinaASTFactory.createArrayInitExpression();
-                        break;
-                    case 'action_invocation_statement':
-                        node = BallerinaASTFactory.createActionInvocationStatement();
-                        break;
-                    case 'worker':
-                        node = BallerinaASTFactory.createWorkerDeclaration();
-                        break;
-                    case 'worker_invocation_statement':
-                        node = BallerinaASTFactory.createWorkerInvocationStatement();
-                        break;
-                    case 'worker_reply_statement':
-                        node = BallerinaASTFactory.createWorkerReplyStatement();
-                        break;
-                    case 'try_catch_statement':
-                        node = BallerinaASTFactory.createTryCatchStatement();
-                        break;
-                    case 'try_block':
-                        node = BallerinaASTFactory.createTryStatement();
-                        break;
-                    case 'catch_block':
-                        node = BallerinaASTFactory.createCatchStatement();
-                        break;
-                    case 'throw_statement':
-                        node = BallerinaASTFactory.createThrowStatement();
-                        break;
-                    case 'comment_statement':
-                        node = BallerinaASTFactory.createCommentStatement();
-                        break;
-                    default:
-                        throw new Error("Unknown node definition for " + jsonNode.type);
-                }
+            switch (nodeType) {
+                case 'package':
+                    node = BallerinaASTFactory.createPackageDefinition();
+                    break;
+                case 'import':
+                    node = BallerinaASTFactory.createImportDeclaration();
+                    break;
+                case 'service_definition':
+                    node = BallerinaASTFactory.createServiceDefinition();
+                    break;
+                case 'function_definition':
+                    node = BallerinaASTFactory.createFunctionDefinition();
+                    break;
+                case 'connector_definition':
+                    node = BallerinaASTFactory.createConnectorDefinition();
+                    break;
+                case 'type_definition':
+                    node = BallerinaASTFactory.createTypeDefinition();
+                    break;
+                case 'resource_definition':
+                    node = BallerinaASTFactory.createResourceDefinition();
+                    break;
+                case 'connector_declaration':
+                    node = BallerinaASTFactory.createConnectorDeclaration();
+                    break;
+                case 'variable_definition':
+                    node = BallerinaASTFactory.createVariableDefinition();
+                    break;
+                case 'variable_definition_statement':
+                    node = BallerinaASTFactory.createVariableDefinitionStatement();
+                    break;
+                case 'resource_argument':
+                    node = BallerinaASTFactory.createResourceParameter();
+                    break;
+                case 'reply_statement':
+                    node = BallerinaASTFactory.createReplyStatement();
+                    break;
+                case 'return_statement':
+                    node = BallerinaASTFactory.createReturnStatement();
+                    break;
+                case 'return_type':
+                    node = BallerinaASTFactory.createReturnType();
+                    break;
+                case 'return_argument':
+                    node = BallerinaASTFactory.createArgument();
+                    break;
+                case 'type_name':
+                    node = BallerinaASTFactory.createTypeName();
+                    break;
+                case 'function_invocation_statement':
+                    node = BallerinaASTFactory.createFunctionInvocationStatement();
+                    break;
+                case 'function_invocation_expression':
+                    node = BallerinaASTFactory.createFunctionInvocationExpression();
+                    break;
+                case 'variable_reference_name':
+                    node = BallerinaASTFactory.createVariableReferenceExpression();
+                    break;
+                case 'variable_reference_expression':
+                    node = BallerinaASTFactory.createVariableReferenceExpression();
+                    break;
+                case 'action_invocation_expression':
+                    node = BallerinaASTFactory.createActionInvocationExpression();
+                    break;
+                case 'assignment_statement':
+                    node = BallerinaASTFactory.createAssignmentStatement();
+                    break;
+                case 'back_tick_expression':
+                    node = BallerinaASTFactory.createBackTickExpression();
+                    break;
+                case 'while_statement' :
+                    node = BallerinaASTFactory.createWhileStatement();
+                    break;
+                case 'break_statement' :
+                    node = BallerinaASTFactory.createBreakStatement();
+                    break;
+                case 'basic_literal_expression' :
+                    node = BallerinaASTFactory.createBasicLiteralExpression();
+                    break;
+                case 'left_operand_expression':
+                    node = BallerinaASTFactory.createLeftOperandExpression();
+                    break;
+                case 'right_operand_expression':
+                    node = BallerinaASTFactory.createRightOperandExpression();
+                    break;
+                case 'if_else_statement' :
+                    node = BallerinaASTFactory.createIfElseStatement();
+                    break;
+                case 'instance_creation_expression':
+                    node = BallerinaASTFactory.createInstanceCreationExpression();
+                    break;
+                case 'then_body':
+                    node = BallerinaASTFactory.createThenBody();
+                    break;
+                case 'if_condition':
+                    node = BallerinaASTFactory.createIfCondition();
+                    break;
+                case 'equal_expression':
+                    node = BallerinaASTFactory.createBinaryExpression({"operator" : "=="});
+                    break;
+                case 'greater_than_expression':
+                    node = BallerinaASTFactory.createBinaryExpression({"operator" : ">"});
+                    break;
+                case 'add_expression':
+                    node = BallerinaASTFactory.createBinaryExpression({"operator" : "+"});
+                    break;
+                case 'multiplication_expression':
+                    node = BallerinaASTFactory.createBinaryExpression({"operator" : "*"});
+                    break;
+                case 'division_expression':
+                    node = BallerinaASTFactory.createBinaryExpression({"operator" : "/"});
+                    break;
+                case 'mod_expression' :
+                    node = BallerinaASTFactory.createBinaryExpression({"operator" : "%"});
+                    break;
+                case 'and_expression':
+                    node = BallerinaASTFactory.createBinaryExpression({"operator" : "&&"});
+                    break;
+                case 'subtract_expression':
+                    node = BallerinaASTFactory.createBinaryExpression({"operator" : "-"});
+                    break;
+                case 'or_expression':
+                    node = BallerinaASTFactory.createBinaryExpression({"operator" : "||"});
+                    break;
+                case 'greater_equal_expression':
+                    node = BallerinaASTFactory.createBinaryExpression({"operator" : ">="});
+                    break;
+                case 'less_than_expression':
+                    node = BallerinaASTFactory.createBinaryExpression({"operator" : "<"});
+                    break;
+                case 'less_equal_expression':
+                    node = BallerinaASTFactory.createBinaryExpression({"operator" : "<="});
+                    break;
+                case 'not_equal_expression':
+                    node = BallerinaASTFactory.createBinaryExpression({"operator" : "!="});
+                    break;
+                case 'unary_expression':
+                    node = BallerinaASTFactory.createUnaryExpression({"operator" : jsonNode.operator});
+                    break;
+                case 'array_map_access_expression':
+                    node = BallerinaASTFactory.createArrayMapAccessExpression();
+                    break;
+                case 'connector_definition':
+                    node = BallerinaASTFactory.createConnectorDefinition();
+                    break;
+                case 'action_definition':
+                    node = BallerinaASTFactory.createConnectorAction();
+                    break;
+                case 'constant_definition':
+                    node = BallerinaASTFactory.createConstantDefinition();
+                    break;
+                case 'struct_definition':
+                    node = BallerinaASTFactory.createStructDefinition();
+                    break;
+                case 'key_value_expression':
+                    node = BallerinaASTFactory.createKeyValueExpression();
+                    break;
+                case 'type_cast_expression':
+                    node = BallerinaASTFactory.createTypeCastExpression();
+                    break;
+                case 'type_mapper_definition':
+                    node = BallerinaASTFactory.createTypeMapperDefinition();
+                    break;
+                case 'struct_field_access_expression':
+                    node = BallerinaASTFactory.createStructFieldAccessExpression();
+                    break;
+                case 'block_statement':
+                    node = BallerinaASTFactory.createBlockStatement();
+                    break;
+                case 'reference_type_init_expression':
+                    node = BallerinaASTFactory.createReferenceTypeInitExpression();
+                    break;
+                case 'array_init_expression':
+                    node = BallerinaASTFactory.createArrayInitExpression();
+                    break;
+                case 'action_invocation_statement':
+                    node = BallerinaASTFactory.createActionInvocationStatement();
+                    break;
+                case 'worker':
+                    node = BallerinaASTFactory.createWorkerDeclaration();
+                    break;
+                case 'worker_invocation_statement':
+                    node = BallerinaASTFactory.createWorkerInvocationStatement();
+                    break;
+                case 'worker_reply_statement':
+                    node = BallerinaASTFactory.createWorkerReplyStatement();
+                    break;
+                case 'try_catch_statement':
+                    node = BallerinaASTFactory.createTryCatchStatement();
+                    break;
+                case 'try_block':
+                    node = BallerinaASTFactory.createTryStatement();
+                    break;
+                case 'catch_block':
+                    node = BallerinaASTFactory.createCatchStatement();
+                    break;
+                case 'throw_statement':
+                    node = BallerinaASTFactory.createThrowStatement();
+                    break;
+                case 'comment_statement':
+                    node = BallerinaASTFactory.createCommentStatement();
+                    break;
+                case 'parameter_definition':
+                    node = BallerinaASTFactory.createParameterDefinition();
+                    break;
+                case 'argument_parameter_definitions':
+                    node = BallerinaASTFactory.createArgumentParameterDefinitionHolder();
+                    break;
+                case 'return_parameter_definitions':
+                    node = BallerinaASTFactory.createReturnParameterDefinitionHolder();
+                    break;
+                default:
+                    throw new Error("Unknown node definition for " + jsonNode.type);
             }
-            node.setLineNumber(jsonNode.line_number, {doSilently: true});
-            return node;
         };
 
         return BallerinaASTFactory;
