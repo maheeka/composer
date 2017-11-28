@@ -24,10 +24,11 @@ import environment from 'plugins/ballerina/env/environment';
 import TransformerTestUtils from './transformer-test-utils';
 
 let transformManager;
+const testDir = 'direct-mapping-creation';
 
 /* global describe */
 /* global it */
-describe('Transform Direct Mapping Creation', () => {
+describe('Transformer Direct Mapping Creation Test Suite', () => {
     // fetch configs before proceeding
     /* global before */
     before((done) => {
@@ -44,9 +45,7 @@ describe('Transform Direct Mapping Creation', () => {
             }).catch(done);
     });
 
-    const testDir = 'direct-mapping-creation';
-
-    it('Direct mapping with primitive variables', (done) => {
+    it('should create statement for mapping primitive source and target', (done) => {
         const { testSource, expectedSource } = TransformerTestUtils
                                                     .getTestResources(testDir, 'primitive-vars');
         TransformerTestUtils.getTree(testSource)
@@ -73,7 +72,7 @@ describe('Transform Direct Mapping Creation', () => {
             });
     }).timeout(5000);
 
-    it('Direct mapping with casting and conversion', (done) => {
+    it('should create statement for mapping primitive source and target with casts and conversions', (done) => {
         const { testSource, expectedSource } = TransformerTestUtils
                                                     .getTestResources(testDir, 'cast-conversion');
         TransformerTestUtils.getTree(testSource)
@@ -153,7 +152,7 @@ describe('Transform Direct Mapping Creation', () => {
             });
     }).timeout(15000);
 
-    it('Direct mapping with structs', (done) => {
+    it('should create statements for mapping struct fields', (done) => {
         const { testSource, expectedSource } = TransformerTestUtils.getTestResources(testDir, 'structs');
         TransformerTestUtils.getTree(testSource)
             .then((tree) => {
@@ -197,7 +196,7 @@ describe('Transform Direct Mapping Creation', () => {
             });
     }).timeout(5000);
 
-    it('Direct mapping with structs with params', (done) => {
+    it('should create statement for mapping struct fields and parameters', (done) => {
         const { testSource, expectedSource } = TransformerTestUtils.getTestResources(testDir, 'structs-and-params');
         TransformerTestUtils.getTree(testSource)
             .then((tree) => {
